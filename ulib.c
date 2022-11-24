@@ -114,41 +114,39 @@ memmove(void *vdst, const void *vsrc, int n)
 int thread_create(void (*start_routine)(void *, void *), void *arg1, void *arg2){
 	void *user_stack;
 	user_stack = (void*)malloc(PG_SIZE);
+  
+  // check if user_stack is aligned with PG_SIZE
+  if((uint)user_stack % PG_SIZE)
+  {
+    user_stack = user_stack + (PG_SIZE - (uint)user_stack % PG_SIZE);
+  }
+
 	return clone(start_routine,arg1,arg2,user_stack);	
 }
 
 int thread_join(){
-	void *stack;
-	int tid = join(&stack);
-	return tid;	
+  void *stack;
+  // stack = (void*)malloc(sizeof(void*));
+  // if(stack == NULL){
+  //   return -1;
+  // }
+  int pid = join(&stack);
+  if (!stack){
+    return -1;
+  }
+  free(stack);
+  return pid;
 }
 
 void lock_init(lock_t *lk_var){
-	lk_var->ticket = 0;
-	lk_var->turn = 0;
+  // spin lock
+  lk_var->locked = 0;
 }
-
-
-//fetch and add 
-//inline primitive
-static inline int fetch_and_add(int *var, int val) {   
-    __asm__ volatile
-    ("lock; xaddl %0, %1"
-	: "+r" (val),  "+m" (*var) // input + output
-	: // No input
-	: "memory"
-    );
-    return val;
-}
-
-
 
 void lock_acquire(lock_t *lk_var){
-	int turn = fetch_and_add(&lk_var->ticket,1);
-	while(lk_var->turn != turn)
-	{}
+  while(xchg(&lk_var->locked, 1) != 0);
 }
 
 void lock_release(lock_t *lk_var){
-	lk_var->turn = lk_var->turn+1;
+  xchg(&lk_var->locked, 0);
 }

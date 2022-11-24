@@ -63,6 +63,11 @@ morecore(uint nu)
 void*
 malloc(uint nbytes)
 {
+  lock_t lock;
+  // make thread safe
+  lock_init(&lock);
+  lock_acquire(&lock);
+
   Header *p, *prevp;
   uint nunits;
 
@@ -87,4 +92,6 @@ malloc(uint nbytes)
       if((p = morecore(nunits)) == 0)
         return 0;
   }
+  // make thread safe
+  // lock_release(&lock);
 }

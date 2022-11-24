@@ -6,8 +6,7 @@ typedef uint pde_t;
 
 
 typedef struct __lock_t {
-    int ticket;
-    int turn;
+    uint locked;       // Is the lock held?
 } lock_t;
 
 

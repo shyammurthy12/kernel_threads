@@ -13,16 +13,24 @@ sys_fork(void)
   return fork();
 }
 
-
 int
 sys_clone(void)
 {
- int function;
-  int arg1;int arg2;
-  int stack;
-  if( (argint(0, &function)<0) || (argint(1, &arg1)<0) ||(argint(2, &arg2)<0) || (argint(3, &stack)<0))
+  void (*fcn)(void*, void*);
+  void *arg1;
+  void *arg2;
+  void *stack;
+
+  if (argptr(0, (void*)&fcn, sizeof(void*)) < 0)
     return -1;
-  return clone((void *)function, (void *)arg1, (void *)arg2, (void *)stack);
+  if (argptr(1, (void*)&arg1, sizeof(void*)) < 0)
+    return -1;
+  if (argptr(2, (void*)&arg2, sizeof(void*)) < 0)
+    return -1;
+  if (argptr(3, (void*)&stack, sizeof(void*)) < 0)
+    return -1;
+
+  return clone(fcn, arg1, arg2, stack);
 }
 
 int
@@ -42,10 +50,9 @@ sys_wait(void)
 int
 sys_join(void)
 {
-   void **stack;
-   int stack_arg;
-   stack_arg = argint(0, &stack_arg);
-   stack = (void**)(stack_arg);
+  void **stack;
+  if (argptr(0, (void*)&stack, sizeof(void**)) < 0)
+    return -1;
    return join(stack);
 }
 
