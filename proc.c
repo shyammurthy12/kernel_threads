@@ -266,12 +266,6 @@ clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack)
 
   np->thread_stack = stack;
   
- // if (((uint*)stack)[0] == 0)  // If alloced addr not set, clone was called
- //                              // without thread_create()
- //   np->thread_stack = stack;
- // else
- //   np->thread_stack = ((void*)stack)[0];
-  
   uint user_stack_contents[3];
   user_stack_contents[0] = 0xffffffff;
   user_stack_contents[1] = (uint)arg1;
