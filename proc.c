@@ -159,9 +159,14 @@ int
 growproc(int n)
 {
   uint sz;
+  acquire(&ptable.lock);
   struct proc *curproc = myproc();
 
   sz = curproc->sz;
+  
+  //also have to increase the address space for 
+  //children threads. 
+  struct proc *p;
   if(n > 0){
     if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;
@@ -170,7 +175,12 @@ growproc(int n)
       return -1;
   }
   curproc->sz = sz;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    if((p->parent == curproc) && (p->pgdir == curproc->pgdir))
+        p->sz = curproc->sz;
   switchuvm(curproc);
+  release(&ptable.lock);
+
   return 0;
 }
 
@@ -198,6 +208,7 @@ fork(void)
   }
   np->sz = curproc->sz;
   np->parent = curproc;
+  np->is_thread = 0;
   *np->tf = *curproc->tf;
 
   // Clear %eax so that fork returns 0 in the child.
@@ -254,6 +265,13 @@ clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack)
  // }
 
   np->thread_stack = stack;
+  
+ // if (((uint*)stack)[0] == 0)  // If alloced addr not set, clone was called
+ //                              // without thread_create()
+ //   np->thread_stack = stack;
+ // else
+ //   np->thread_stack = ((void*)stack)[0];
+  
   uint user_stack_contents[3];
   user_stack_contents[0] = 0xffffffff;
   user_stack_contents[1] = (uint)arg1;
@@ -272,7 +290,7 @@ clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack)
   np->tf->eax = 0;
   np->tf->eip = (uint)fcn;
   np->tf->esp = (uint)stack_ptr;
-  
+  np->is_thread = 1; 
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
       np->ofile[i] = filedup(curproc->ofile[i]);
@@ -326,8 +344,8 @@ exit(void)
   // Pass abandoned children to init.
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     // if((p->parent == curproc) && (p->pgdir == curproc->pgdir))
-    //   curproc->pgdir = copyuvm(p->pgdir, p->sz);
-    if(p->parent == curproc){
+    //   p->pgdir = copyuvm(p->pgdir, p->sz);
+    if((p->parent == curproc)&&(!p->is_thread)){
       p->parent = initproc;
       if(p->state == ZOMBIE)
         wakeup1(initproc);

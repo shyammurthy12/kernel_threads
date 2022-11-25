@@ -148,5 +148,6 @@ void lock_acquire(lock_t *lk_var){
 }
 
 void lock_release(lock_t *lk_var){
-  xchg(&lk_var->locked, 0);
+ lk_var->locked = 0;
+  // xchg(&lk_var->locked, 0);
 }
