@@ -176,7 +176,7 @@ growproc(int n)
   }
   curproc->sz = sz;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if((p->parent == curproc) && (p->pgdir == curproc->pgdir))
+    if((p != curproc) && (p->pgdir == curproc->pgdir))
         p->sz = curproc->sz;
   switchuvm(curproc);
   release(&ptable.lock);

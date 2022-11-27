@@ -113,7 +113,7 @@ memmove(void *vdst, const void *vsrc, int n)
 
 int thread_create(void (*start_routine)(void *, void *), void *arg1, void *arg2){
 	void *user_stack;
-	user_stack = (void*)malloc(PG_SIZE);
+	user_stack = (void*)malloc(PG_SIZE*2);
   
   // check if user_stack is aligned with PG_SIZE
   if((uint)user_stack % PG_SIZE)
